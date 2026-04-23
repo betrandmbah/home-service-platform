@@ -1,0 +1,117 @@
+pipeline {
+  agent any
+
+  environment {
+    AWS_REGION = 'us-east-1'
+    ACCOUNT_ID = credentials('aws-account-id')
+    ECR_REGISTRY = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+    CLUSTER_NAME = 'home-service-prod'
+  }
+
+  stages {
+    stage('Checkout') {
+      steps { checkout scm }
+    }
+
+    stage('Verify tools') {
+      steps {
+        sh '''
+          aws --version
+          docker --version
+          kubectl version --client
+          helm version
+          terraform version
+        '''
+      }
+    }
+
+    stage('Login to ECR') {
+      steps {
+        withCredentials([
+          string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+          string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
+        ]) {
+          sh '''
+            export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+            export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+          '''
+        }
+      }
+    }
+
+    stage('Build images') {
+      steps {
+        sh '''
+          docker build -t $ECR_REGISTRY/home-service/frontend:${BUILD_NUMBER} app/frontend
+          docker build -t $ECR_REGISTRY/home-service/user-service:${BUILD_NUMBER} app/user-service
+          docker build -t $ECR_REGISTRY/home-service/booking-service:${BUILD_NUMBER} app/booking-service
+          docker build -t $ECR_REGISTRY/home-service/worker-service:${BUILD_NUMBER} app/worker-service
+        '''
+      }
+    }
+
+    stage('Push images') {
+      steps {
+        sh '''
+          docker push $ECR_REGISTRY/home-service/frontend:${BUILD_NUMBER}
+          docker push $ECR_REGISTRY/home-service/user-service:${BUILD_NUMBER}
+          docker push $ECR_REGISTRY/home-service/booking-service:${BUILD_NUMBER}
+          docker push $ECR_REGISTRY/home-service/worker-service:${BUILD_NUMBER}
+        '''
+      }
+    }
+
+    stage('Configure kubeconfig') {
+      steps {
+        withCredentials([
+          string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+          string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
+        ]) {
+          sh '''
+            export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+            export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+            aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
+          '''
+        }
+      }
+    }
+
+    stage('Render manifests') {
+      steps {
+        sh '''
+          mkdir -p rendered
+          sed "s/YOUR_AWS_ACCOUNT_ID/$ACCOUNT_ID/g; s/IMAGE_TAG/${BUILD_NUMBER}/g" k8s/base/frontend-deployment.yaml > rendered/frontend-deployment.yaml
+          sed "s/YOUR_AWS_ACCOUNT_ID/$ACCOUNT_ID/g; s/IMAGE_TAG/${BUILD_NUMBER}/g" k8s/base/user-service-deployment.yaml > rendered/user-service-deployment.yaml
+          sed "s/YOUR_AWS_ACCOUNT_ID/$ACCOUNT_ID/g; s/IMAGE_TAG/${BUILD_NUMBER}/g" k8s/base/booking-service-deployment.yaml > rendered/booking-service-deployment.yaml
+          sed "s/YOUR_AWS_ACCOUNT_ID/$ACCOUNT_ID/g; s/IMAGE_TAG/${BUILD_NUMBER}/g" k8s/base/worker-service-deployment.yaml > rendered/worker-service-deployment.yaml
+        '''
+      }
+    }
+
+    stage('Deploy to EKS') {
+      steps {
+        sh '''
+          kubectl apply -f k8s/base/namespace.yaml
+          kubectl apply -f k8s/base/services.yaml
+          kubectl apply -f rendered/frontend-deployment.yaml
+          kubectl apply -f rendered/user-service-deployment.yaml
+          kubectl apply -f rendered/booking-service-deployment.yaml
+          kubectl apply -f rendered/worker-service-deployment.yaml
+          kubectl apply -f k8s/base/ingress.yaml
+          kubectl rollout status deployment/frontend -n home-service
+          kubectl rollout status deployment/user-service -n home-service
+          kubectl rollout status deployment/booking-service -n home-service
+          kubectl rollout status deployment/worker-service -n home-service
+        '''
+      }
+    }
+  }
+
+  post {
+    always {
+      sh 'docker image prune -af || true'
+      cleanWs()
+    }
+  }
+}

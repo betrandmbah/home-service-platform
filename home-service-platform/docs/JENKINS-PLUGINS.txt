@@ -1,0 +1,12 @@
+Install these Jenkins plugins:
+
+1. Git plugin
+2. Pipeline
+3. Credentials Binding
+4. Docker Pipeline
+5. Kubernetes
+6. Blue Ocean
+7. Pipeline: Stage View
+8. AWS Credentials
+9. SSH Agent
+10. Workspace Cleanup

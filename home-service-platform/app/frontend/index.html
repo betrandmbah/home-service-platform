@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home Service Platform</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="container">
+      <h1>Book trusted cleaners, plumbers, electricians and movers</h1>
+      <p>Production-style home service app running on EKS, behind ALB, CloudFront and Route 53.</p>
+      <a class="btn" href="#services">Browse services</a>
+    </div>
+  </header>
+
+  <section id="services" class="container section">
+    <h2>Popular Services</h2>
+    <div class="cards">
+      <div class="card"><h3>House Cleaning</h3><p>One-time and recurring cleaning with vetted providers.</p></div>
+      <div class="card"><h3>Electrical Work</h3><p>Repairs, fittings and installation jobs by licensed workers.</p></div>
+      <div class="card"><h3>Plumbing</h3><p>Leaks, drain fixes, replacements and emergency support.</p></div>
+    </div>
+  </section>
+
+  <section class="container section">
+    <h2>API checks</h2>
+    <button onclick="loadUsers()">Load Users</button>
+    <button onclick="loadBookings()">Load Bookings</button>
+    <button onclick="loadWorkers()">Load Workers</button>
+    <pre id="output"></pre>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>

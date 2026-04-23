@@ -1,0 +1,8 @@
+body { margin: 0; font-family: Arial, sans-serif; color: #1f2937; background: #f8fafc; }
+.hero { background: linear-gradient(135deg, #0f172a, #1d4ed8); color: #fff; padding: 80px 20px; }
+.container { max-width: 1100px; margin: 0 auto; }
+.section { padding: 40px 20px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+.card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+.btn, button { background: #2563eb; color: #fff; border: none; border-radius: 8px; padding: 12px 18px; text-decoration: none; cursor: pointer; }
+pre { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 8px; overflow: auto; }

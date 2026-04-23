@@ -1,0 +1,13 @@
+output "vpc_id" { value = module.vpc.vpc_id }
+output "public_subnets" { value = module.vpc.public_subnets }
+output "private_subnets" { value = module.vpc.private_subnets }
+output "cluster_name" { value = module.eks.cluster_name }
+output "cluster_endpoint" { value = module.eks.cluster_endpoint }
+output "cloudfront_domain_name" { value = aws_cloudfront_distribution.frontend.domain_name }
+output "frontend_bucket_name" { value = aws_s3_bucket.frontend.bucket }
+output "db_endpoint" { value = aws_db_instance.postgres.endpoint }
+output "db_secret_arn" { value = aws_db_instance.postgres.master_user_secret[0].secret_arn }
+output "frontend_ecr_repo" { value = aws_ecr_repository.frontend.repository_url }
+output "user_service_ecr_repo" { value = aws_ecr_repository.user_service.repository_url }
+output "booking_service_ecr_repo" { value = aws_ecr_repository.booking_service.repository_url }
+output "worker_service_ecr_repo" { value = aws_ecr_repository.worker_service.repository_url }
